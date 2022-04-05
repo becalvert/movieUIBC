@@ -6,22 +6,27 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MoviesUI.Data;
+using MoviesUI.Services;
 
 namespace MoviesUI.Controllers
 {
     public class ActorsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ActorsApiClient _actorsApriClient;
 
-        public ActorsController(ApplicationDbContext context)
+        public bool IsSuccessStatusCode { get; private set; }
+
+        public ActorsController(ApplicationDbContext context, ActorsApiClient actorsApiClient)
         {
             _context = context;
+            _actorsApriClient = actorsApiClient;
         }
 
         // GET: Actors
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Actor.ToListAsync());
+            return View(await _actorsApriClient.GetActorsList());
         }
 
         // GET: Actors/Details/5
@@ -32,14 +37,19 @@ namespace MoviesUI.Controllers
                 return NotFound();
             }
 
-            var actor = await _context.Actor
-                .FirstOrDefaultAsync(m => m.Id == id);
+            
+            // Amended to use webapi
+
+            int ActorId = id.Value;
+            var actor = await _actorsApriClient.GetActorItem(ActorId);
+
             if (actor == null)
             {
                 return NotFound();
             }
 
             return View(actor);
+
         }
 
         // GET: Actors/Create
@@ -57,8 +67,7 @@ namespace MoviesUI.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(actor);
-                await _context.SaveChangesAsync();
+                await _actorsApriClient.CreateActorItem(actor);
                 return RedirectToAction(nameof(Index));
             }
             return View(actor);
@@ -72,7 +81,11 @@ namespace MoviesUI.Controllers
                 return NotFound();
             }
 
-            var actor = await _context.Actor.FindAsync(id);
+            // Amended to use webapi
+
+            int ActorId = id.Value;
+            var actor = await _actorsApriClient.GetActorItem(ActorId);
+
             if (actor == null)
             {
                 return NotFound();
@@ -92,24 +105,10 @@ namespace MoviesUI.Controllers
                 return NotFound();
             }
 
+            // Webapi call
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(actor);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ActorExists(actor.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                await _actorsApriClient.UpdateActorItem(id, actor);
                 return RedirectToAction(nameof(Index));
             }
             return View(actor);
@@ -123,8 +122,12 @@ namespace MoviesUI.Controllers
                 return NotFound();
             }
 
-            var actor = await _context.Actor
-                .FirstOrDefaultAsync(m => m.Id == id);
+
+            // Amended to use webapi
+
+            int ActorId = id.Value;
+            var actor = await _actorsApriClient.GetActorItem(ActorId);
+
             if (actor == null)
             {
                 return NotFound();
@@ -138,9 +141,8 @@ namespace MoviesUI.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var actor = await _context.Actor.FindAsync(id);
-            _context.Actor.Remove(actor);
-            await _context.SaveChangesAsync();
+            // Call delete service
+            await _actorsApriClient.DeleteActorItem(id);
             return RedirectToAction(nameof(Index));
         }
 

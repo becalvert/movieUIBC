@@ -24,5 +24,7 @@ namespace MoviesUI.Services
             return await Client.GetFromJsonAsync<IEnumerable<Movie>>("/api/Movies");
         }
 
+
+
     }
 }
